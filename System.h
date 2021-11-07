@@ -28,13 +28,13 @@ public:
 		{
 			double m_cdf = fit_cdf.back() + m;
 			fit_cdf.push_back(m_cdf);
-			int n_cdf = grid_cdf.back() + n;
-			grid_cdf.push_back(n_cdf);
+		//	int n_cdf = grid_cdf.back() + n;
+		//	grid_cdf.push_back(n_cdf);
 		}
 		else
 		{
 			fit_cdf.push_back(m);
-			grid_cdf.push_back(n);
+		//	grid_cdf.push_back(n);
 		}
 	};
 	void update_n(unsigned int i, unsigned int new_n);
@@ -43,6 +43,7 @@ public:
 	void env_change();
 	void death_process();
 	void birth_process(); 
+	void mutation_process(Identity *id);
 	void ForcedMutation(Identity* identity);
 	void Extinction();
 	void Fixation();
@@ -61,8 +62,9 @@ private:
 	std::function<double()> fit_dist;
 	std::function<double()> rand;
 	std::vector<double> fit_cdf;
-	std::vector<double> grid_cdf;
+	//std::vector<double> grid_cdf;
 	std::vector<int> new_gen;
+	std::vector<Identity *> new_mutations;
 	//	double* create_cdf();
 	std::vector<long double>  SAD;
 	std::vector<long double>  total_wins;

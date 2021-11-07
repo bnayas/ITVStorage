@@ -30,8 +30,10 @@ public:
 	inline double get_m() const { return m; };
 
 	Species(System* sys, unsigned int n0 = 0);
-	Species(System* sys, Species *s, unsigned int n0 = 0);
+	Species(System* sys, Identity* id, unsigned int n0);
+	Species(System* sys, Species* s, unsigned int n0 = 0);
 	void Revive(System* sys, Species* s, unsigned int n0 = 0);
+	void Revive(System* sys, Identity* id, unsigned int n0 = 0);
 	~Species();
 
 	//inline int kid_num() const { return kids.size(); };

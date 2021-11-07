@@ -30,7 +30,23 @@ Species::Species(System* sys, Species* s, unsigned int n0 ) :
 	//s->kids.push_back(this);
 	sys->addToCdf(n, fit);
 }
-
+Species::Species(System* sys, Identity* id, unsigned int n0) :
+	n(n0), birth(sys->t)
+{
+	//	father = s;
+	lineage = id;
+	lineage->change_n(1);
+	this->sys = sys;
+	fit = sys->gen_fit();
+	m = fit;
+	lineage->change_m(fit);
+	Sp_id = sys->Sp.size();
+	//kid_id = s->kids.size();
+	sys->sr++;
+	sys->Sp.push_back(this);
+	//s->kids.push_back(this);
+	sys->addToCdf(n, fit);
+}
 void Species::Revive(System* sys, Species* s, unsigned int n0) 
 {
 	n = n0;
@@ -47,6 +63,24 @@ void Species::Revive(System* sys, Species* s, unsigned int n0)
 	sys->sr++;
 	sys->Sp.push_back(this);
 	//s->kids.push_back(this);
+	sys->addToCdf(n, fit);
+}
+
+void Species::Revive(System* sys, Identity* id, unsigned int n0)
+{
+	n = n0;
+	birth = sys->t;
+	//father = s;
+	lineage = id;
+	lineage->change_n(1);
+	this->sys = sys;
+	fit = sys->gen_fit();
+	m = fit;
+	lineage->change_m(fit);
+	Sp_id = sys->Sp.size();
+	//kid_id = s->kids.size();
+	sys->sr++;
+	sys->Sp.push_back(this);
 	sys->addToCdf(n, fit);
 }
 

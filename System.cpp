@@ -11,12 +11,17 @@ System::System(unsigned int N, float GAMMA , float DELTA, float NU) :
 	InitFileNames();
 	fit_dist = (rand_gen.real_unif_dist(-gama0, gama0));
 	rand = (rand_gen.real_unif_dist(0, 1));
-	MRCA = new Species(this, N);
-	MRCA->set_n(N);
-	MRCA->set_lineage(&Env);
-	Env.set_m(MRCA->get_m());
+	double m = 0;
+	for (int i = 0; i < N; i++)
+	{
+		Species* s = new Species(this, 1);
+		s->set_n(1);
+		s->set_lineage(&Env);
+		new_gen.push_back(0);
+		m += s->get_m();
+	}
+	Env.set_m(m);
 	Env.set_n(N);
-	new_gen.push_back(0);
 	Focal.set_n(0);
 	SAD.resize(size, 0);
 	total_wins.resize(size, 0);
@@ -183,6 +188,7 @@ void System::env_change()
 
 void System::death_process()
 {
+//	std::cout << "before death Sp: " << Sp.size() << " , new_gen: " << new_gen.size() << " , death_list: " << death_list.size() << " , mutations: " << new_mutations.size() << "\n";
 	//int sum_n = 0;
 	//for (auto s = Sp.begin(); s != Sp.end(); s++)
 	//	sum_n += (*s)->get_n();
@@ -217,15 +223,23 @@ void System::death_process()
 	}
 	//std::cout << "\n";
 	int sum_n = 0;
+	/*dn = new_gen.begin();
+	*/
 	for (s = Sp.begin(); s != Sp.end(); s++)
-		sum_n += (*s)->get_n();
+	{
+		sum_n += (*s)->get_n() ;
+//		dn++;
+	}
 	if (sum_n != size)
 		std::cout << "Error";
 
+	//std::cout << "after death Sp: " << Sp.size() << " , new_gen: " << new_gen.size() << " , death_list: " << death_list.size() << "\n";
 }
 
 void System::birth_process()
 {
+	//std::cout << "before birth Sp: " << Sp.size() << " , new_gen: " << new_gen.size() << " , death_list: " << death_list.size() << " , mutations: " << new_mutations.size() << "\n";
+
 	auto max = fit_cdf.back();
 	unsigned int idx = 0;
 	mutants = 0;
@@ -247,11 +261,12 @@ void System::birth_process()
 	for (int i = 0;   i < deaths_num; i++)
 	{
 //		idx = find_in_sorted(rand_gen.rand(), fit_cdf, Sp.size()-mutants);
-		idx = find_in_sorted(fit_cdf.back()*rand_gen.rand(), fit_cdf, Sp.size() - mutants);
+		idx = find_in_sorted(fit_cdf.back()*rand_gen.rand(), fit_cdf, Sp.size());
 		if (rand() < nu)
 			//if (rand_gen.rand() < nu)
 		{
-			mutation_process(idx);
+			new_mutations.push_back(Sp[idx]->lineage);
+//			mutation_process(idx);
 			mutants++;
 		}
 		else
@@ -271,9 +286,10 @@ void System::birth_process()
 			std::cout << "Strange";
 		s++;
 	}
-	if (sum_n != size)
+	if (sum_n + mutants != size)
 		std::cout << "Error";
 //	std::cout << "\n";
+//	std::cout << "after birth Sp: " << Sp.size() << " , new_gen: " << new_gen.size() << " , death_list: " << death_list.size() << " , mutations: " << new_mutations.size() << "\n";
 
 }
 
@@ -303,13 +319,45 @@ void System::mutation_process(unsigned int idx)
 //	std::cout << t <<": Mutation procees: " << idx << " " << s->get_n() << "\n";
 }
 
+void System::mutation_process(Identity *id)
+{
+	Species* s;
+	if (death_list.size() < 1)
+	{
+		s = new Species(this, id, 1);
+	//	std::cout << "New species \n";
+	}
+	else
+	{
+		s = death_list.back();
+		s->Revive(this, id, 1);
+		death_list.pop_back();
+		//	s->set_n(1);
+		//	s->set_fit(exp(gen_fit()));
+		//	s->Sp_id = Sp.size();
+		//	Sp.push_back(s);
+		//	s->kid_id = Sp[idx]->kids.size();
+		//	sr++;
+		////	Sp[idx]->kids.push_back(s);
+		//	addToCdf(1, s->get_fit());
+		//	s->birth = t;
+		//	s->set_lineage(Sp[idx]->lineage);
+		//	s->lineage->change_n(1);
+	}
+	new_gen.push_back(0);
+	//	std::cout << t <<": Mutation procees: " << idx << " " << s->get_n() << "\n";
+}
+
 void System::update()
 {
-	
+//	std::cout << "before update Sp: " << Sp.size() << " , new_gen: " << new_gen.size() << " , death_list: " << death_list.size()  << " , mutations: " << new_mutations.size() << "\n";
+
 	auto dn = new_gen.begin();
 	unsigned int n = 0;
 	int i = 0;
+	//	int j = 0;
 	auto s = Sp.begin();
+	//std::vector<Species*> deads;
 	for ( ; s !=  Sp.end() ; )
 	{	
 		(*s)->change_n(*dn);
@@ -319,6 +367,7 @@ void System::update()
 
 		if (n < 1)
 		{
+	//		deads.push_back(*s);
 		/*	std::cout << t << ": Death process of " << i << " \n ";
 			for (auto verf_itr = Sp.begin(); verf_itr != Sp.end(); ++verf_itr)
 				std::cout << (*verf_itr)->get_n() << " ";
@@ -349,6 +398,7 @@ void System::update()
 			{
 			//	grid_cdf.pop_back();
 			//	fit_cdf.pop_back();
+				death_list.push_back(Sp.back());
 				Sp.pop_back();
 				new_gen.pop_back();
 				sr--;
@@ -374,8 +424,28 @@ void System::update()
 			s++;
 			i++;
 		}
-
+//		j++;
 	}
+	//for (auto d : deads)
+	//{
+	//	bool found = false;
+	//	for (auto sd = death_list.begin(); sd != death_list.end(); sd++)
+	//	{
+	//		if (*sd == d)
+	//			found = true;
+	//	}
+	//	if (!found)
+	//		std::cout << "Error";
+	//}
+	//std::cout << "before mutations birth Sp: " << Sp.size() << " , new_gen: " << new_gen.size() << " , death_list: " << death_list.size() << " , mutations: " << new_mutations.size() << "\n";
+	while ( new_mutations.size() > 0)
+	{
+		Identity* sp = new_mutations.back();
+		mutation_process(sp);
+		new_mutations.pop_back();
+		mutants--;
+	}
+//	std::cout << "after mutations birth Sp: " << Sp.size() << " , new_gen: " << new_gen.size() << " , death_list: " << death_list.size() << " , mutations: " << new_mutations.size() << "\n";
 
 	s = Sp.begin();
 	double cum_m = 0;
@@ -408,12 +478,12 @@ void System::update()
 	for (s = Sp.begin(); s != Sp.end(); s++)
 	{
 		if ((*s)->get_n() == 0)
-			std::cout << "Error: Dead";
+			std::cout << "Error: Dead\n";
 		if ((*s)->lineage == &Focal)
 			sum_n1 += ((*s)->get_n());
 	}
 	if (n1 != sum_n1)
-		std::cout << "x problem error";
+		std::cout << "Error: x problem\n";
 	int sum_l = n1 + n2;
 	if (current_focal->get_n() > current_focal->last_focal_n)
 	{
@@ -433,8 +503,8 @@ void System::update()
 		if (n1 < size)
 			SAD[n1 - 1] ++;
 	}
-	if (sum_l != size || n1 > size || n2 > size) 
-		std::cout << "Error";
+	if (sum_l != size || n1 > size || n2 > size )
+		std::cout << "Error: sum";
 	/*if(Sp.size() > size)
 		std::cout << "Error";*/
 	
@@ -470,7 +540,15 @@ void System::ForcedMutation(Identity *identity)
 		i++;
 	}
 	s_max->change_n(-1);
-	Species* s = new Species(this, 1);
+	Species* s;
+	if(death_list.size() == 0)
+		 s = new Species(this, 1);
+	else
+	{
+		s = death_list.back();
+		s->Revive(this, identity, 1);
+		death_list.pop_back();
+	}
 	identity->set_n(1);
 	identity->set_m( s->get_m());
 	s->set_lineage(identity);
@@ -566,6 +644,14 @@ void System::print_system() {
 //"Wins","Loses","TWins","TLoses","Pi","SAD","SR","x1","x2","g11","g12","g13","g21","g22","g31","p","mu","sig2","invasions","xvisits","fvisits" };
 	if (collect_data)
 	{
+		if (death_list.size() > 10)
+		{
+			for (int i = 0; i < floor(death_list.size() / 2); i++)
+			{
+				delete death_list.back();
+				death_list.pop_back();
+			}
+		}
 		print_vec(file_names[0], mm1, size);
 		print_vec(file_names[1], mm2, size);
 		print_vec(file_names[2], visits, size);
